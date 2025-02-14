@@ -31,15 +31,18 @@ str(dat)
 
 ```{r print data, include=TRUE, echo=TRUE}
 # this print command is only shown on the html if include = TRUE
+# Solution1: use mean_OD instead of OD600 
 library(ggplot2)
-dat1 <- dat[dat$Experiment == "exp1" & dat$Replicate == "1",]
+dat1 <- dat[dat$Experiment == "exp1" ,]
 plot <- ggplot(dat1, aes(x = Time, y = OD600_blank_corrected, color = Growth_Medium)) + 
-    geom_point(size = 0.3)
-    labs(title = "Growth Curves: experiment1 & replicate1",
+    geom_point(size = 0.5) +
+    facet_wrap(~ Growth_Medium)
+    labs( title = "Growth Curves: experiment1 & replicate1",
        x = "Time",
        y = "Population Size",
        color = "Growth Medium") +
-  theme_minimal()
+  theme_minimal() 
+)
 print(plot)
 ```
 
