@@ -35,10 +35,68 @@ print(fN)
 
 ```{r dimensions, eval=TRUE, include=TRUE, echo=FALSE}
 # 
+library(tidyverse)
 dd <- dim(dat)
 str(dat)
 summary(dat)
+head(dat)
+
+
+
+ggplot(dat, aes(x = Time, y = OD600_blank_corrected, group = Growth_Medium, color = Growth_Medium)) +
+  geom_line(linewidth = 0.5) +
+  geom_point() +
+  theme_minimal()
+
+plot_growth_curve <- function(data) {
+  data %>%
+    ggplot(aes(x = Time, y = OD600_blank_corrected, color = Strain, linetype = Growth_Medium, group = interaction(Strain, Growth_Medium, Replicate))) +
+    geom_line(linewidth = 1, alpha = 0.7) +  # Plot lines
+    geom_point(linewidth = 2, alpha = 0.8) +  # Add points for each measurement
+    labs(
+      title = "Bacterial Growth Over Time",
+      x = "Time (Hours)",
+      y = "OD600 (Corrected)",
+      color = "Strain",
+      linetype = "Growth Medium"
+    ) +
+    theme_minimal() +
+    theme(legend.position = "bottom")
+}
+
+# Call function to generate plot
+plot_growth_curve(dat)
 ```
+
+
+
+We will:
+- Load and explore the OD600 dataset
+- Plot growth curves using `ggplot2`
+- Create a heatmap for protein abundances
+
+
+
+```{r dimensions, eval=TRUE, include=TRUE, echo=FALSE}
+## **1. Load Required Libraries**
+
+
+# Load necessary packages
+library(ggplot2)    # For plotting
+library(dplyr)      # For data manipulation
+library(tidyr)      # For reshaping data
+library(pheatmap)   # For heatmap visualization
+
+# Create heatmap of protein abundances
+pheatmap(protein_data,
+         scale = "row",         # Normalize rows
+         clustering_distance_rows = "euclidean",  
+         clustering_distance_cols = "euclidean",
+         clustering_method = "complete",
+         color = colorRampPalette(c("blue", "white", "red"))(100), main = "Protein Abundance Heatmap")
+```
+#
+
 The dimensions of this dataset are shown above.
 It is easy possible to show also content of variables in the html part.  
 Note: if you end a line with 2 spaces you go to a new paragraph.  
