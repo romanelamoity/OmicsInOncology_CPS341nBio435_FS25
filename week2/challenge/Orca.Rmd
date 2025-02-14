@@ -1,0 +1,67 @@
+---
+title: "Plotting Growth Curves"
+author: "UZH n UU: Who is the author here"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  bookdown::html_document2: default
+  bookdown::pdf_document2: default
+bibliography: bibliography.bib
+---
+
+```{r load libraries, include=TRUE, echo=FALSE}
+library(readr) # this package is for loading files (e.g. tsv, csv, ..)
+
+```
+
+
+# Introduction
+
+The data that we are going to use for this exercise is published in the mBio paper [@niggli2023mbio]. 
+It can be found online on: https://doi.org/10.6084/m9.figshare.23578086.v1
+It describes the OD600 (growth) of the *Staphylococcus aureus* strain **JE2** in different media.
+
+# Reading in Data and Plotting Growth Curves
+
+```{r load data, eval=TRUE, include=TRUE, echo=TRUE}
+fN <- "JE_growth_final.txt" # us this txt file that is copy pasted spread sheet from excel tab separated 
+dat <- read.table(fN, header = T, sep = "\t", stringsAsFactors = TRUE)
+summary(dat)
+str(dat)
+```
+
+```{r print data, include=TRUE, echo=TRUE}
+# this print command is only shown on the html if include = TRUE
+library(ggplot2)
+dat1 <- dat[dat$Experiment == "exp1" & dat$Replicate == "1",]
+plot <- ggplot(dat1, aes(x = Time, y = OD600_blank_corrected, color = Growth_Medium)) + 
+    geom_point(size = 0.3)
+    labs(title = "Growth Curves: experiment1 & replicate1",
+       x = "Time",
+       y = "Population Size",
+       color = "Growth Medium") +
+  theme_minimal()
+print(plot)
+```
+
+
+```{r dimensions, eval=TRUE, include=TRUE, echo=FALSE}
+# 
+dd <- dim(dat)
+```
+
+The dimensions of this dataset are shown above.
+It is easy possible to show also content of variables in the html part.  
+Note: if you end a line with 2 spaces you go to a new paragraph.  
+  
+Like here: `r dd`
+
+
+# Session Information
+
+```{r sessionInfo, echo=FALSE, include=TRUE}
+pander::pander(sessionInfo())
+```
+
+
+# References {-}
+
