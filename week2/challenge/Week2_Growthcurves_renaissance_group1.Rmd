@@ -10,7 +10,7 @@ bibliography: bibliography.bib
 
 ```{r load libraries, include=TRUE, echo=FALSE}
 library(readr) # this package is for loading files (e.g. tsv, csv, ..)
-
+library(tidyverse) # this package includes ggplot2, dplyr, tidyr, and other tools for data manipulation and visualization
 ```
 
 
@@ -23,26 +23,37 @@ It describes the OD600 (growth) of the *Staphylococcus aureus* strain **JE2** in
 # Reading in Data and Plotting Growth Curves
 
 ```{r load data, eval=TRUE, include=TRUE, echo=TRUE}
-fN <- "JE_growth_final.txt" # us this txt file that is copy pasted spread sheet from excel tab separated 
-dat <- read.table(fN, header = T, sep = "\t", stringsAsFactors = TRUE)
+dat <- read.table("JE_growth_final.txt", header = TRUE, sep = "\t", stringsAsFactors = TRUE) 
+# Load tab-separated data from a text file, treating the first row as column headers and converting character columns to factors
 ```
 
 ```{r print data, eval=TRUE, include=FALSE, echo=TRUE}
-# this print command is only shown on the html if include = TRUE
-print("these are so called junks of code, you may include them to be shown in the rendered document (html here) each junk has a unique name next to it and then some additional arguments")
-print(fN)
+print("these are so-called chunks of code, you may include them to be shown in the rendered document (html here). Each chunk has a unique name next to it and then some additional arguments")
+print("JE_growth_final.txt")  # Print the filename directly
 ```
 
+```{r, eval=TRUE, include=TRUE, echo=FALSE}
+#Basic Data Inspection
+str(dat)       # Structure of the dataset (data types and first few values)
+dim(dat)       # Dimensions (number of rows and columns)
+head(dat)      # First 6 rows of the dataset
+tail(dat)      # Last 6 rows of the dataset
+colnames(dat)  # Column names
+
+#Summary Statistics
+summary(dat)   # Summary statistics for each column
+
+#Checking for Missing Values
+sum(is.na(dat))        # Total number of missing values
+colSums(is.na(dat))    # Missing values per column
+
+#Checking Factor Levels (if categorical data exists)
+sapply(dat, class)  # Check the data type of each column
+lapply(dat, levels) # Show factor levels (if applicable)
+```
+
+
 ```{r dimensions, eval=TRUE, include=TRUE, echo=FALSE}
-# 
-library(tidyverse)
-dd <- dim(dat)
-str(dat)
-summary(dat)
-head(dat)
-
-
-
 ggplot(dat, aes(x = Time, y = OD600_blank_corrected, group = Growth_Medium, color = Growth_Medium)) +
   geom_line(linewidth = 0.5) +
   geom_point() +
@@ -50,7 +61,54 @@ ggplot(dat, aes(x = Time, y = OD600_blank_corrected, group = Growth_Medium, colo
 ```
 
 ```{r}
+# Visualize growth of bacteria over time for each Growth Medium
+dat %>%
+  ggplot(aes(x = Time, y = OD600_blank_corrected, color = Growth_Medium)) +  # Define x-axis as Time, y-axis as OD600, and color by Growth_Medium
+  geom_line(stat = "summary", fun = mean, linewidth = 1) +  # Plot the mean OD600 value at each time point (summary statistic)
+  geom_point(alpha = 0.2, size = 0.5) +  # Add individual data points with transparency (alpha) for clarity
+  labs(
+    title = "Bacterial Growth Over Time",  # Set plot title
+    x = "Time (hours)",                    # Label for the x-axis
+    y = "OD600 (Blank Corrected)",         # Label for the y-axis
+    color = "Growth Medium"                # Legend label for the Growth Medium
+  ) +
+  theme_minimal() +  # Use a simple minimal theme for the plot
+  theme(legend.position = "top")  # Position the legend at the top of the plot
+```
+```{r}
+# Visualize growth of bacteria over time for each Growth Medium in separate plots
+dat %>%
+  ggplot(aes(x = Time, y = OD600_blank_corrected, color = Growth_Medium)) +  # Define x-axis as Time, y-axis as OD600, and color by Growth_Medium
+  geom_line(stat = "summary", fun = mean, linewidth = 1) +  # Plot the mean OD600 value at each time point
+  geom_point(alpha = 0.2, size = 0.5) +  # Add individual data points with transparency (alpha) for clarity
+  labs(
+    title = "Bacterial Growth Over Time",
+    x = "Time (hours)",
+    y = "OD600 (Blank Corrected)",
+    color = "Growth Medium"
+  ) +
+  theme_minimal() +  # Use a simple minimal theme for the plot
+  theme(legend.position = "none") +  # Hide the legend (since each plot has a separate color)
+  facet_wrap(~ Growth_Medium, scales = "free_y")  # Create separate plots for each Growth Medium with independent y-axis scales
+```
+```{r}
+# Visualize growth of bacteria over time for each Growth Medium and Experiment combination in separate plots
+dat %>%
+  ggplot(aes(x = Time, y = OD600_blank_corrected, color = Growth_Medium)) +  # Define x-axis as Time, y-axis as OD600, and color by Growth_Medium
+  geom_line(stat = "summary", fun = mean, linewidth = 1) +  # Plot the mean OD600 value at each time point
+  geom_point(alpha = 0.2, size = 0.5) +  # Add individual data points with transparency (alpha) for clarity
+  labs(
+    title = "Bacterial Growth Over Time by Experiment and Growth Medium",
+    x = "Time (hours)",
+    y = "OD600 (Blank Corrected)",
+    color = "Growth Medium"
+  ) +
+  theme_minimal() +  # Use a simple minimal theme for the plot
+  theme(legend.position = "none") +  # Hide the legend (since each plot has a separate color)
+  facet_grid(Growth_Medium ~ Experiment, scales = "free_y")  # Facet by both Growth_Medium and Experiment, with independent y-axis scales
+```
 
+```{r}
   dat %>%
     ggplot(aes(x = Time, y = OD600_blank_corrected, color = Experiment, linetype = Growth_Medium, group = interaction(Strain, Growth_Medium, Replicate))) +
     geom_point(linewidth = 2, alpha = 0.8) +  # Add points for each measurement
@@ -67,45 +125,64 @@ ggplot(dat, aes(x = Time, y = OD600_blank_corrected, group = Growth_Medium, colo
 
 ```
 
+#Hypothesize (or test) if there is a significant difference for growing the cultures in these three different media
 ```{r}
-# Call function to generate plot
-plot_growth_curve(dat)
+# Perform one-way ANOVA to compare OD600 across different Growth Media
+anova_results <- dat %>%
+  aov(OD600_blank_corrected ~ Growth_Medium, data = .)
+
+# Summarize ANOVA results
+summary(anova_results)
+
+# If ANOVA is significant, perform a post-hoc test (Tukey's HSD)
+post_hoc_results <- TukeyHSD(anova_results)
+
+# Display post-hoc results
+summary(post_hoc_results)
+```
+
+#heatmap on quantitative matrix of protein abundances (labels and proteins are blinded)
+```{r}
+# Use read.table() for tab-separated files
+protein_data <- read.table("qmat_1198.txt", sep = "\t", header = TRUE)
+
+# View the first few rows of the dataset
+head(protein_data)
+
+# Check the structure of the dataset
+str(protein_data)
+
+# Reshape the data to long format (Protein_Gene is the identifier, and the samples are columns)
+protein_data_long <- protein_data %>%
+  pivot_longer(cols = starts_with("sample"),  # Select columns that start with "sample"
+               names_to = "Sample",          # New column for sample names
+               values_to = "Abundance")     # New column for protein abundance values
+
+# View the reshaped data
+head(protein_data_long)
+
+```
+
+```{r}
+library(gplots)  # Loads the 'gplots' package, which contains the heatmap.2 function
+```
+
+```{r}
+# Convert the data frame to a matrix, excluding the first column (assuming it contains labels)
+mat <- as.matrix(protein_data[,2:ncol(protein_data)])  
+
+# Replace all zero values in the matrix with NA (to avoid taking log of zero)
+mat[mat == 0] <- NA  
+
+# Apply log2 transformation to the matrix, removing any NA values before transformation
+logmat <- log2(na.omit(mat))  
+
+# Generate a heatmap using the transformed matrix, disabling trace lines for clarity
+heatmap.2(logmat, trace="none")  
+
 ```
 
 
-
-We will:
-- Load and explore the OD600 dataset
-- Plot growth curves using `ggplot2`
-- Create a heatmap for protein abundances
-
-
-
-```{r dimensions, eval=TRUE, include=TRUE, echo=FALSE}
-## **1. Load Required Libraries**
-
-
-# Load necessary packages
-library(ggplot2)    # For plotting
-library(dplyr)      # For data manipulation
-library(tidyr)      # For reshaping data
-library(pheatmap)   # For heatmap visualization
-
-# Create heatmap of protein abundances
-pheatmap(protein_data,
-         scale = "row",         # Normalize rows
-         clustering_distance_rows = "euclidean",  
-         clustering_distance_cols = "euclidean",
-         clustering_method = "complete",
-         color = colorRampPalette(c("blue", "white", "red"))(100), main = "Protein Abundance Heatmap")
-```
-#
-
-The dimensions of this dataset are shown above.
-It is easy possible to show also content of variables in the html part.  
-Note: if you end a line with 2 spaces you go to a new paragraph.  
-  
-Like here: `r dd`
 
 
 # Session Information
