@@ -311,14 +311,27 @@ Of course we like to plot this as well, like we did with the complete dataset.
 *All the steps above are similar to the steps you did for the 'complete' dataset*
 
 ```{r}
+# Extract baits and preys from the subset
+baits_sub <- SuppS6_sub$Bait
+preys_sub <- SuppS6_sub$Prey
 
+# Create the PPI graph using the subset data
+ppiGraph <- makeproteingraph(baits_sub, preys_sub)
+
+# Output graph details (number of nodes and edges)
+ppiGraph
 ```
 
 3. layout the ppiGraph using the layoutGraph(.., layoutType="neato") function
 4. render the graph.
 
 ```{r}
+# Load required package
+library(Rgraphviz)
 
+# Layout and render the graph
+ppiGraphLayout <- layoutGraph(ppiGraph, layoutType = "neato")
+renderGraph(ppiGraphLayout)
 ```
 
 ## Let's make the plot more informative
@@ -396,8 +409,20 @@ The number of connections per node can be found with the 'degree' function.
 Sort the output of this function to give a nice overview of what proteins have the most connected proteins.
 
 ```{r}
+# Load the graph package if not already loaded
+library(graph)
 
+# Compute the degree of each node (protein)
+node_degrees <- degree(ppiGraph)
 
+# View the raw output
+print(node_degrees)
+
+# Sort by highest degree (descending order)
+sorted_degrees <- sort(node_degrees, decreasing = TRUE)
+
+# Print the top proteins with the most connections
+print(sorted_degrees)
 ```
 
 ### Create a counts table
@@ -406,10 +431,43 @@ In R, there is a function called 'table', that will give you the possibility to 
 Use this function to analyze the output of the degree function from above
 
 ```{r}
+# Create a table of degree counts
+degree_counts <- table(node_degrees)
+
+# Print the counts table
+print(degree_counts)
 
 ```
 ```{r}
 hist(sort(degree(ppiGraph)))
+```
+More advanced visuals made with chatGPT
+```{r}
+# Plot histogram of node degrees
+hist(sort(node_degrees),
+     main = "Degree Distribution of PPI Network",
+     xlab = "Number of Connections (Degree)",
+     ylab = "Frequency",
+     col = "steelblue",
+     border = "black")
+
+```
+
+```{r}
+library(ggplot2)
+
+# Convert table to dataframe
+degree_df <- as.data.frame(degree_counts)
+colnames(degree_df) <- c("Degree", "Frequency")
+
+# Create bar plot
+ggplot(degree_df, aes(x = Degree, y = Frequency)) +
+  geom_bar(stat = "identity", fill = "steelblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Degree Distribution of PPI Network",
+       x = "Number of Connections (Degree)",
+       y = "Number of Proteins")
+
 ```
 
 ### About these results
@@ -419,8 +477,8 @@ Explain why you see this. Think about it, also in terms of the experiment we're 
 
 _______________________________
 
-Type your answer here!
-
+We found 0 proteins with a degree of 0.
+This is expected because the protocol specifically filters for bait proteins, meaning we only measure interactions where at least one prey was bound to a bait.
 _______________________________
 
 ### Connected components
@@ -429,6 +487,17 @@ Extract the connected components from our graph using the connectedComp method. 
 Assign the outcome to a variable with a name you will still understand when we wake you up at night (hypothetically of course!).
 
 ```{r}
+# Load the necessary package
+library(graph)
+
+# Extract connected components from the PPI graph
+connected_components <- connectedComp(ppiGraph)
+
+# Print the connected components
+print(connected_components)
+
+# Count the number of connected components
+length(connected_components)
 
 ```
 
